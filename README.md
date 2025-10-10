@@ -31,35 +31,35 @@ from arbiter import Measurement, MeasurementGroup
 
 # Single measurement
 musiq = Measurement.get("musiq")
-score = musiq()("path/to/image.jpg")
+score = musiq().calculate("path/to/image.jpg")
 
 # Multiple measurements on an image
 image_metrics = MeasurementGroup.get("image")
-results = image_metrics()("path/to/image.jpg")
+results = image_metrics().calculate("path/to/image.jpg")
 
 # Compare two images
 lpips = Measurement.get("lpips")
-distance = lpips()(("reference.jpg", "generated.jpg"))
+distance = lpips().calculate(("reference.jpg", "generated.jpg"))
 
 # Text-image similarity
 clip_score = Measurement.get("clip_score")
-similarity = clip_score()(("a photo of a cat", "cat.jpg"))
+similarity = clip_score().calculate(("a photo of a cat", "cat.jpg"))
 ```
 
 ### Command Line
 
 ```bash
 # List all available measurements
-python -m arbiter list
+arbiter list
 
 # List measurements for specific media type
-python -m arbiter list image
+arbiter list image
 
 # Run a single measurement
-python -m arbiter measure musiq image.jpg
+arbiter measure musiq image.jpg
 
 # Run multiple measurements
-python -m arbiter multimeasure image.jpg
+arbiter multimeasure image.jpg
 ```
 
 ## Supported Measurements
@@ -135,12 +135,12 @@ from arbiter import Measurement
 
 # No-reference quality assessment
 musiq = Measurement.get("musiq")
-quality_score = musiq()("image.jpg")
+quality_score = musiq().calculate("image.jpg")
 print(f"Image quality: {quality_score}")
 
 # Check if image is blurry
 vol = Measurement.get("vol")
-sharpness = vol()("image.jpg")
+sharpness = vol().calculate("image.jpg")
 print(f"Sharpness: {sharpness}")
 ```
 
@@ -151,12 +151,12 @@ from arbiter import Measurement
 
 # Perceptual similarity
 lpips = Measurement.get("lpips")
-distance = lpips()(("reference.jpg", "generated.jpg"))
+distance = lpips().calculate(("reference.jpg", "generated.jpg"))
 print(f"LPIPS distance: {distance}")
 
 # Structural similarity
 ssim = Measurement.get("ssim")
-similarity = ssim()(("reference.jpg", "generated.jpg"))
+similarity = ssim().calculate(("reference.jpg", "generated.jpg"))
 print(f"SSIM: {similarity}")
 ```
 
@@ -174,7 +174,7 @@ generated_images = ["gen1.jpg", "gen2.jpg", "gen3.jpg"]
 
 # FID expects a list of tuples
 image_pairs = [(r, g) for r, g in zip(real_images, generated_images)]
-fid_score = fid()(image_pairs)
+fid_score = fid().calculate(image_pairs)
 print(f"FID: {fid_score}")
 ```
 
@@ -186,7 +186,7 @@ from arbiter import Measurement
 clip_score = Measurement.get("clip_score")
 
 # Measure how well an image matches a text description
-score = clip_score()(("a red car on a highway", "car.jpg"))
+score = clip_score().calculate(("a red car on a highway", "car.jpg"))
 print(f"CLIP Score: {score}")
 ```
 
@@ -197,7 +197,7 @@ from arbiter import MeasurementGroup
 
 # Get all image quality metrics
 image_group = MeasurementGroup.get("image")
-all_scores = image_group()("image.jpg")
+all_scores = image_group().calculate("image.jpg")
 
 for metric_name, score in all_scores.items():
     print(f"{metric_name}: {score}")
@@ -228,17 +228,17 @@ from arbiter import Measurement
 
 # No-reference video quality
 video_musiq = Measurement.get("video_musiq")
-quality = video_musiq()("video.mp4")
+quality = video_musiq().calculate("video.mp4")
 print(f"Video quality: {quality}")
 
 # Compare two videos
 video_lpips = Measurement.get("video_lpips")
-distance = video_lpips()(("reference.mp4", "compressed.mp4"))
+distance = video_lpips().calculate(("reference.mp4", "compressed.mp4"))
 print(f"Video LPIPS: {distance}")
 
 # Industry-standard VMAF
 vmaf = Measurement.get("vmaf")
-vmaf_score = vmaf()(("reference.mp4", "encoded.mp4"))
+vmaf_score = vmaf().calculate(("reference.mp4", "encoded.mp4"))
 print(f"VMAF: {vmaf_score}")
 ```
 
@@ -248,7 +248,7 @@ print(f"VMAF: {vmaf_score}")
 from arbiter import Measurement
 
 wer = Measurement.get("wer")
-error_rate = wer()(("reference transcript", "hypothesis transcript"))
+error_rate = wer().calculate(("reference transcript", "hypothesis transcript"))
 print(f"Word Error Rate: {error_rate}")
 ```
 
@@ -258,57 +258,57 @@ print(f"Word Error Rate: {error_rate}")
 
 ```bash
 # List all measurements
-python -m arbiter list
+arbiter list
 
 # List only image measurements
-python -m arbiter list image
+arbiter list image
 
 # List only video measurements
-python -m arbiter list video
+arbiter list video
 
 # Output as JSON
-python -m arbiter list image --output-format json
+arbiter list image --output-format json
 
 # Output as CSV
-python -m arbiter list --output-format csv
+arbiter list --output-format csv
 ```
 
 #### Run Single Measurement
 
 ```bash
 # Image quality
-python -m arbiter measure musiq image.jpg
+arbiter measure musiq image.jpg
 
 # Image comparison
-python -m arbiter measure lpips reference.jpg generated.jpg
+arbiter measure lpips reference.jpg generated.jpg
 
 # Text-image alignment
-python -m arbiter measure clip_score "a photo of a dog" dog.jpg
+arbiter measure clip_score "a photo of a dog" dog.jpg
 
 # Video quality
-python -m arbiter measure vmaf reference.mp4 encoded.mp4
+arbiter measure vmaf reference.mp4 encoded.mp4
 
 # Different output formats
-python -m arbiter measure musiq image.jpg --output-format json
-python -m arbiter measure musiq image.jpg --output-format csv
+arbiter measure musiq image.jpg --output-format json
+arbiter measure musiq image.jpg --output-format csv
 ```
 
 #### Run Multiple Measurements
 
 ```bash
 # Run all compatible measurements on an image
-python -m arbiter multimeasure image.jpg
+arbiter multimeasure image.jpg
 
 # Compare two images with all available metrics
-python -m arbiter multimeasure reference.jpg generated.jpg
+arbiter multimeasure reference.jpg generated.jpg
 
 # Filter measurements with regex patterns
-python -m arbiter multimeasure image.jpg --include-pattern "musiq|nima"
-python -m arbiter multimeasure image.jpg --exclude-pattern "fid|kid"
+arbiter multimeasure image.jpg --include-pattern "musiq|nima"
+arbiter multimeasure image.jpg --exclude-pattern "fid|kid"
 
 # Output options
-python -m arbiter multimeasure image.jpg --output-format json
-python -m arbiter multimeasure image.jpg --output-format markdown
+arbiter multimeasure image.jpg --output-format json
+arbiter multimeasure image.jpg --output-format markdown
 ```
 
 ## Architecture
