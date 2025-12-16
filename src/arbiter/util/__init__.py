@@ -31,6 +31,7 @@ from .terminal_util import (
 )
 from .test_util import get_test_measurement, human_readable_duration
 from .text_util import count_n_grams, get_distance_matrix
+from .torch_util import get_device, get_device_and_dtype_from_module
 
 __all__ = [
     "ColoredLoggingFormatter",
@@ -50,6 +51,8 @@ __all__ = [
     "get_media_type_from_input",
     "get_media_type_from_path",
     "get_num_gpus",
+    "get_device",
+    "get_device_and_dtype_from_module",
     "get_test_measurement",
     "green",
     "human_readable_duration",

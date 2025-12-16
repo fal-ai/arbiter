@@ -2,7 +2,7 @@ import torch
 from torchmetrics.video import VideoMultiMethodAssessmentFusion as VMAF
 
 from ...annotations import ProcessedMeasurementInputType
-from ...util import logger
+from ...util import get_device, get_device_and_dtype_from_module, logger
 from ..base import Measurement
 
 
@@ -24,10 +24,8 @@ class VideoMultiMethodAssessmentFusion(Measurement):
         # VMAF typically uses default parameters for most use cases
         self.vmaf_model = VMAF()
 
-        # Move to GPU if available
-        if torch.cuda.is_available():
-            logger.debug("Moving VMAF model to GPU")
-            self.vmaf_model = self.vmaf_model.cuda()
+        # Move to device
+        self.vmaf_model = self.vmaf_model.to(get_device())
 
         # Set to evaluation mode
         self.vmaf_model.eval()
@@ -47,9 +45,9 @@ class VideoMultiMethodAssessmentFusion(Measurement):
         hypothesis = hypothesis.unsqueeze(0).permute(0, 2, 1, 3, 4)
 
         # Move to same device as model
-        device = self.vmaf_model.device
-        reference = reference.to(device)
-        hypothesis = hypothesis.to(device)
+        device, dtype = get_device_and_dtype_from_module(self.vmaf_model)
+        reference = reference.to(device, dtype=dtype)
+        hypothesis = hypothesis.to(device, dtype=dtype)
 
         # Compute VMAF
         with torch.no_grad():

@@ -2,7 +2,7 @@ import torch
 from torchmetrics.image import DeepImageStructureAndTextureSimilarity as DISTS
 
 from ...annotations import ProcessedMeasurementInputType
-from ...util import logger
+from ...util import get_device, get_device_and_dtype_from_module, logger
 from ..base import Measurement
 
 
@@ -22,12 +22,8 @@ class DeepImageStructureAndTextureSimilarity(Measurement):
         # Initialize DISTS with default parameters
         # reduction='mean' averages the score across the batch
         self.dists_model = DISTS(reduction="mean")
-
-        # Move to GPU if available
-        if torch.cuda.is_available():
-            logger.debug("Moving DISTS model to GPU")
-            self.dists_model = self.dists_model.cuda()
-
+        # Move to device
+        self.dists_model = self.dists_model.to(get_device())
         # Set to evaluation mode
         self.dists_model.eval()
 
@@ -49,9 +45,9 @@ class DeepImageStructureAndTextureSimilarity(Measurement):
             hypothesis = hypothesis.unsqueeze(0)
 
         # Move to same device as metric
-        device = self.dists_model.device
-        reference = reference.to(device)
-        hypothesis = hypothesis.to(device)
+        device, dtype = get_device_and_dtype_from_module(self.dists_model)
+        reference = reference.to(device, dtype=dtype)
+        hypothesis = hypothesis.to(device, dtype=dtype)
 
         # Compute DISTS
         with torch.no_grad():

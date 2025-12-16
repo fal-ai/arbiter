@@ -2,7 +2,7 @@ import torch
 from torchmetrics.image import KernelInceptionDistance as KID
 
 from ...annotations import ProcessedMeasurementInputType
-from ...util import logger
+from ...util import get_device, get_device_and_dtype_from_module, logger
 from ..base import Measurement
 
 
@@ -26,11 +26,10 @@ class KernelInceptionDistance(Measurement):
         # Initialize KID with default parameters
         # subset_size=50 is the default for computing polynomial kernel MMD
         self.kid_model = KID(subset_size=50)
-
-        # Move to GPU if available
-        if torch.cuda.is_available():
-            logger.debug("Moving KID model to GPU")
-            self.kid_model = self.kid_model.cuda()
+        # Move to device
+        self.kid_model = self.kid_model.to(get_device())
+        # Set to evaluation mode
+        self.kid_model.eval()
 
     def __call__(  # type: ignore[override]
         self,
@@ -45,6 +44,7 @@ class KernelInceptionDistance(Measurement):
         self.kid_model.reset()
         self.kid_model.subset_size = min(len(input), 1000)
 
+        device, _ = get_device_and_dtype_from_module(self.kid_model)
         # Process each pair
         for real_image, generated_image in input:
             # KID expects 4D tensors (batch dimension)
@@ -59,7 +59,6 @@ class KernelInceptionDistance(Measurement):
                 generated_image = (generated_image * 255).to(torch.uint8)
 
             # Move to same device as metric
-            device = self.kid_model.device
             real_image = real_image.to(device)
             generated_image = generated_image.to(device)
 
@@ -72,4 +71,7 @@ class KernelInceptionDistance(Measurement):
         with torch.no_grad():
             kid_mean, kid_std = self.kid_model.compute()
 
-        return kid_mean.item()
+        return {
+            "mean": kid_mean.item(),
+            "std": kid_std.item(),
+        }

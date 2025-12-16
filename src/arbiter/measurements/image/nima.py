@@ -1,7 +1,7 @@
 import torch
 
 from ...annotations import ProcessedMeasurementInputType
-from ...util import logger
+from ...util import get_device, get_device_and_dtype_from_module, logger
 from ..base import Measurement
 
 
@@ -26,10 +26,7 @@ class NIMA(Measurement):
 
         # Create metric; downloads weights on first use
         self._pyiqa = pyiqa
-        device = (
-            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        )
-        self.nima_model = pyiqa.create_metric("nima", device=device)
+        self.nima_model = pyiqa.create_metric("nima", device=get_device())
         logger.debug("Initialized NIMA metric via pyiqa")
 
         # pyiqa metrics are nn.Modules; ensure eval mode
@@ -49,6 +46,10 @@ class NIMA(Measurement):
         # Ensure 4D tensor (batch dimension)
         if image.ndim == 3:
             image = image.unsqueeze(0)
+
+        # Move to same device as model
+        device, dtype = get_device_and_dtype_from_module(self.nima_model)
+        image = image.to(device, dtype=dtype)
 
         with torch.no_grad():
             score = self.nima_model(image)

@@ -6,7 +6,7 @@ from torchmetrics.multimodal.clip_iqa import (
 )
 
 from ...annotations import ProcessedMeasurementInputType
-from ...util import logger
+from ...util import get_device, get_device_and_dtype_from_module, logger
 from ..base import Measurement
 
 
@@ -58,9 +58,8 @@ class CLIPIQA(Measurement):
         self._model = TMCLIPImageQualityAssessment(
             prompts=tuple(self.custom_prompts.values())
         )
-        if torch.cuda.is_available():
-            logger.debug(f"Moving CLIP-IQA model to GPU")
-            self._model = self._model.cuda()
+        # Move to device
+        self._model = self._model.to(get_device())
         self._model.eval()
 
     def __call__(  # type: ignore[override]
@@ -77,8 +76,8 @@ class CLIPIQA(Measurement):
         if image.ndim == 3:
             image = image.unsqueeze(0)
 
-        device = getattr(self._model, "device", next(self._model.parameters()).device)
-        img = image.to(device)
+        device, dtype = get_device_and_dtype_from_module(self._model)
+        img = image.to(device, dtype=dtype)
 
         with torch.no_grad():
             scores = self._model(img)

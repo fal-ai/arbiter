@@ -2,7 +2,7 @@ import torch
 from torchmetrics.image import FrechetInceptionDistance as FID
 
 from ...annotations import ProcessedMeasurementInputType
-from ...util import logger
+from ...util import get_device, get_device_and_dtype_from_module, logger
 from ..base import Measurement
 
 
@@ -28,10 +28,13 @@ class FrechetInceptionDistance(Measurement):
         # normalize=True normalizes the input images
         self.fid_model = FID(feature=2048, normalize=True)
 
-        # Move to GPU if available
-        if torch.cuda.is_available():
-            logger.debug("Moving FID model to GPU")
-            self.fid_model = self.fid_model.cuda()
+        # Move to device - we cannot use float64 on MPS, so we have to use cpu instead
+        device = get_device()
+        if device.type != "mps":
+            self.fid_model = self.fid_model.to(device)
+
+        # Set to evaluation mode
+        self.fid_model.eval()
 
     def __call__(  # type: ignore[override]
         self,
@@ -44,6 +47,7 @@ class FrechetInceptionDistance(Measurement):
         """
         # Reset the internal state
         self.fid_model.reset()
+        device, dtype = get_device_and_dtype_from_module(self.fid_model)
 
         # Process each pair
         for real_image, generated_image in input:
@@ -60,9 +64,8 @@ class FrechetInceptionDistance(Measurement):
                 generated_image = (generated_image * 255).to(torch.uint8)
 
             # Move to same device as metric
-            device = self.fid_model.device
-            real_image = real_image.to(device)
-            generated_image = generated_image.to(device)
+            real_image = real_image.to(device, dtype=dtype)
+            generated_image = generated_image.to(device, dtype=dtype)
 
             # Update FID with this pair
             # real=True for real images, real=False for generated images

@@ -2,7 +2,7 @@ import torch
 from torchmetrics.image import StructuralSimilarityIndexMeasure as SSIM
 
 from ...annotations import ProcessedMeasurementInputType
-from ...util import logger
+from ...util import get_device, get_device_and_dtype_from_module, logger
 from ..base import Measurement
 
 
@@ -29,10 +29,8 @@ class StructuralSimilarityIndexMeasure(Measurement):
         # data_range=1.0 for images in [0, 1] range
         self.ssim_model = SSIM(data_range=1.0)
 
-        # Move to GPU if available
-        if torch.cuda.is_available():
-            logger.debug("Moving SSIM model to GPU")
-            self.ssim_model = self.ssim_model.cuda()
+        # Move to device
+        self.ssim_model = self.ssim_model.to(get_device())
 
         # Set to evaluation mode
         self.ssim_model.eval()
@@ -55,9 +53,9 @@ class StructuralSimilarityIndexMeasure(Measurement):
             hypothesis = hypothesis.unsqueeze(0)
 
         # Move to same device as metric
-        device = self.ssim_model.device
-        reference = reference.to(device)
-        hypothesis = hypothesis.to(device)
+        device, dtype = get_device_and_dtype_from_module(self.ssim_model)
+        reference = reference.to(device, dtype=dtype)
+        hypothesis = hypothesis.to(device, dtype=dtype)
 
         # Compute SSIM
         with torch.no_grad():
