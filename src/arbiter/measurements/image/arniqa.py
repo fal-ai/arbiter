@@ -2,7 +2,7 @@ import torch
 from torchmetrics.image.arniqa import ARNIQA as TMARNIQA
 
 from ...annotations import ProcessedMeasurementInputType
-from ...util import logger
+from ...util import get_device, get_device_and_dtype_from_module, logger
 from ..base import Measurement
 
 
@@ -27,11 +27,8 @@ class ARNIQA(Measurement):
                 "ARNIQA requires optional dependencies. Install with: pip install timm einops"
             ) from e
 
-        # Move to GPU if available
-        if torch.cuda.is_available():
-            logger.debug("Moving ARNIQA model to GPU")
-            self.arniqa_model = self.arniqa_model.cuda()
-
+        # Move to device
+        self.arniqa_model = self.arniqa_model.to(get_device())
         # Set to evaluation mode
         self.arniqa_model.eval()
 
@@ -50,10 +47,8 @@ class ARNIQA(Measurement):
             image = image.unsqueeze(0)
 
         # Move to same device as model
-        device = getattr(
-            self.arniqa_model, "device", next(self.arniqa_model.parameters()).device
-        )
-        image = image.to(device)
+        device, dtype = get_device_and_dtype_from_module(self.arniqa_model)
+        image = image.to(device, dtype=dtype)
 
         # Compute ARNIQA
         with torch.no_grad():

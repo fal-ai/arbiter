@@ -2,7 +2,7 @@ import torch
 from torchmetrics.multimodal.clip_score import CLIPScore as TMCLIPScore
 
 from ...annotations import ProcessedMeasurementInputType
-from ...util import logger
+from ...util import get_device, get_device_and_dtype_from_module, logger
 from ..base import Measurement
 
 
@@ -25,9 +25,8 @@ class CLIPScore(Measurement):
                 f"CLIPScore requires optional dependencies. Install with: pip install transformers timm\nException: {e}"
             ) from e
 
-        if torch.cuda.is_available():
-            logger.debug("Moving CLIPScore model to GPU")
-            self.clip_score = self.clip_score.cuda()
+        # Move to device
+        self.clip_score = self.clip_score.to(get_device())
         self.clip_score.eval()
 
     def __call__(  # type: ignore[override]
@@ -45,10 +44,8 @@ class CLIPScore(Measurement):
             image = image.unsqueeze(0)
 
         # Move to same device as model
-        device = getattr(
-            self.clip_score, "device", next(self.clip_score.parameters()).device
-        )
-        image = image.to(device)
+        device, dtype = get_device_and_dtype_from_module(self.clip_score)
+        image = image.to(device, dtype=dtype)
 
         with torch.no_grad():
             score = self.clip_score(image, text_prompt)

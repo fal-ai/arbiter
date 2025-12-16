@@ -2,7 +2,7 @@ import torch
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity as LPIPS
 
 from ...annotations import ProcessedMeasurementInputType
-from ...util import logger
+from ...util import get_device, get_device_and_dtype_from_module, logger
 from ..base import Measurement
 
 
@@ -23,10 +23,8 @@ class LearnedPerceptualImagePatchSimilarity(Measurement):
         # net_type='alex' is faster, 'vgg' is more accurate but slower
         self.lpips_model = LPIPS(net_type="alex", reduction="mean")
 
-        # Move to GPU if available
-        if torch.cuda.is_available():
-            logger.debug("Moving LPIPS model to GPU")
-            self.lpips_model = self.lpips_model.cuda()
+        # Move to device
+        self.lpips_model = self.lpips_model.to(get_device())
 
         # Set to evaluation mode
         self.lpips_model.eval()
@@ -49,9 +47,9 @@ class LearnedPerceptualImagePatchSimilarity(Measurement):
             hypothesis = hypothesis.unsqueeze(0)
 
         # Move to same device as model
-        device = next(self.lpips_model.parameters()).device
-        reference = reference.to(device)
-        hypothesis = hypothesis.to(device)
+        device, dtype = get_device_and_dtype_from_module(self.lpips_model)
+        reference = reference.to(device, dtype=dtype)
+        hypothesis = hypothesis.to(device, dtype=dtype)
 
         # Compute LPIPS
         # Note: torchmetrics LPIPS expects inputs in [0, 1] range

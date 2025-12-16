@@ -15,9 +15,6 @@ class SpectralDistortionIndex(Measurement):
     name = "spectral_distortion_index"
     aliases = ["d_lambda", "sdi"]
 
-    def setup(self) -> None:
-        """No stateful setup required; use functional API to avoid buffers."""
-
     def __call__(  # type: ignore[override]
         self,
         input: ProcessedMeasurementInputType,
