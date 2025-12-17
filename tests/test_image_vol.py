@@ -41,6 +41,12 @@ async def _test_image_vol() -> None:
             noise = (torch.randn_like(image) * 0.2).clamp(-1, 1)
             noisy = torch.clamp(image + noise, 0, 1)
             noisy_score = vol.calculate((noisy,))
+
+            # Print the scores
+            print(f"Base score: {base}")
+            print(f"Blurred score: {blurred_score}")
+            print(f"Noisy score: {noisy_score}")
+
             assert noisy_score >= base - 1e-4
 
 

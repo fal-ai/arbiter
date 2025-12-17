@@ -9,6 +9,8 @@ class VarianceOfLaplacian(Measurement):
     """
     Variance of Laplacian (VoL) sharpness measure.
     Higher values typically indicate a sharper image.
+
+    Values are scaled to match cv2.Laplacian(image, cv2.CV_64F).var() on uint8 [0, 255] images.
     """
 
     media_type = ("image",)
@@ -28,7 +30,7 @@ class VarianceOfLaplacian(Measurement):
         if image.ndim != 3:
             raise ValueError("Expected image tensor of shape [C, H, W]")
 
-        # Convert to grayscale [1, H, W]
+        # Convert to grayscale [1, H, W] in [0, 255] range to match cv2.Laplacian().var()
         if image.shape[0] == 3:
             r, g, b = image[0:1], image[1:2], image[2 : 2 + 1]
             gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
@@ -37,6 +39,9 @@ class VarianceOfLaplacian(Measurement):
         else:
             # Fallback: average across channels
             gray = image.mean(dim=0, keepdim=True)
+
+        # Scale to [0, 255] to produce values comparable to cv2.Laplacian().var()
+        gray = gray * 255.0
 
         # Add batch dimension -> [1,1,H,W]
         gray_b = gray.unsqueeze(0)
